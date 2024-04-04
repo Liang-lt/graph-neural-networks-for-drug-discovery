@@ -117,7 +117,7 @@ common_args_parser.add_argument('--epochs', type=int, default=500, help='Number 
 common_args_parser.add_argument('--batch-size', type=int, default=50, help='Number of graphs in a mini-batch')
 common_args_parser.add_argument('--learn-rate', type=float, default=1e-5)
 
-common_args_parser.add_argument('--savemodel', action='store_true', default=True, help='Saves model with highest validation score')
+common_args_parser.add_argument('--savemodel', action='store_true', default=False, help='Saves model with highest validation score')
 common_args_parser.add_argument('--logging', type=str, default='less', choices=[k for k, v in LOG_FUNCTIONS.items()])
 
 

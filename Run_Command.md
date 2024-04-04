@@ -14,5 +14,5 @@ python train.py GGNN --train-set data/ESOL_train.csv.gz --valid-set data/ESOL_va
 batch size 50, learn rate 1.176e-5 and 1200 epochs is good for ESOL
 
 ```angular2html
-nohup python train.py GGNN --train-set data/ESOL_train.csv.gz --valid-set data/ESOL_valid.csv.gz --test-set data/ESOL_test.csv.gz --loss MaskedMultiTaskCrossEntropy --score RMSE --loss MSE --logging less --epochs 1200 --learn-rate 1.176e-5 > outputs/GGNN_ESOL_predicted_log_solubility.log 2>&1 &
+nohup python train.py GGNN --train-set data/ESOL_train.csv.gz --valid-set data/ESOL_valid.csv.gz --test-set data/ESOL_test.csv.gz --loss MaskedMultiTaskCrossEntropy --score RMSE --loss MSE --logging less --epochs 2000 --learn-rate 1.176e-5 > outputs/GGNN_ESOL_predicted_log_solubility.log 2>&1 &
 ```
