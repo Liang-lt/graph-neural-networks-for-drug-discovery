@@ -39,7 +39,7 @@ class ExampleAttentionMPNN(AggregationMPNN):
 
 if __name__ == '__main__':
     print('loading data')
-    train_dataset = MolGraphDataset('toydata/piece-of-esol.csv.gz')
+    train_dataset = MolGraphDataset('data/piece-of-esol.csv.gz')
     train_dataloader = DataLoader(train_dataset, batch_size=50, shuffle=True, collate_fn=molgraph_collate_fn)
 
     print('instantiating ExampleAttentionMPNN')

@@ -50,7 +50,7 @@ class Set2Vec(nn.Module):
 
     def forward(self, hidden_output_nodes, input_nodes, node_mask):
         batch_size = input_nodes.shape[0]
-        energy_mask = (1 - node_mask).float() * self.BIG_NEGATIVE
+        energy_mask = (~node_mask).float() * self.BIG_NEGATIVE
 
         lstm_input = torch.zeros(batch_size, self.memory_size)
 

@@ -10,7 +10,7 @@ from gnn.graph_features import atom_features
 from collections import defaultdict
 
 
-class MolGraphDataset(data.Dataset):
+class MolGraphDataset_tox(data.Dataset):
     r"""For datasets consisting of SMILES strings and target values.
 
     Expects a csv file formatted as:
@@ -37,6 +37,8 @@ class MolGraphDataset(data.Dataset):
         else:
             self.targets = np.genfromtxt(path, delimiter='\t', skip_header=1, usecols=range(2, n_cols), comments=None).reshape(-1, n_cols - 2)
 
+        print(self.targets.shape)
+
     def __getitem__(self, index):
         adjacency, nodes, edges = smile_to_graph(self.smiles[index])
         targets = self.targets[index, :]
@@ -45,6 +47,40 @@ class MolGraphDataset(data.Dataset):
     def __len__(self):
         return len(self.smiles)
 
+class MolGraphDataset(data.Dataset):
+    r"""For datasets consisting of SMILES strings and target values.
+
+    Expects a csv file formatted as:
+    smiles	logS
+    CC(=O)OC3CCC4C2CCC1=CC(=O)CCC1(C)C2CCC34C 	-5.184
+    CCCCC(CC)CO	-2.11
+
+    Args:
+        path
+        prediction: set to True if dataset contains no target values
+    """
+
+    def __init__(self, path, prediction=False):
+        with gzip.open(path, 'r') as file:
+            self.header_cols = file.readline().decode('utf-8')[:-2].split(',')
+        n_cols = len(self.header_cols)
+        self.target_names = self.header_cols[1:]
+        self.smiles = np.genfromtxt(path, delimiter=',', skip_header=1, usecols=[0], dtype=np.str, comments=None)
+        if prediction:
+            self.targets = np.empty((len(self.smiles), n_cols - 2))  # may be used to figure out number of targets etc
+        else:
+            self.targets = np.genfromtxt(path, delimiter=',', skip_header=1, usecols=range(1, n_cols), comments=None).reshape(-1, n_cols - 1)
+
+        # print(self.targets) # [[]]
+
+
+    def __getitem__(self, index):
+        adjacency, nodes, edges = smile_to_graph(self.smiles[index])
+        targets = self.targets[index, :]
+        return (adjacency, nodes, edges), targets
+
+    def __len__(self):
+        return len(self.smiles)
 rdLogger = rdkit.RDLogger.logger()
 rdLogger.setLevel(rdkit.RDLogger.ERROR)
 

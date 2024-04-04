@@ -2,7 +2,7 @@ import torch
 from torch.utils import data
 import numpy as np
 from sklearn.metrics import r2_score, classification_report, roc_auc_score, average_precision_score
-
+import os
 import datetime
 
 
@@ -134,12 +134,15 @@ def evaluate_net(net, train_dataloader, validation_dataloader, test_dataloader, 
         g.best_mean_test_score = test_mean_score
 
         if args.savemodel:
-            path = SAVEDMODELS_DIR + type(net).__name__ + DATETIME_STR
+            # mkdir if not exists
+
+            os.makedirs(SAVEDMODELS_DIR, exist_ok=True)
+            path = SAVEDMODELS_DIR + type(net).__name__ + "_ESOL_predicted_log_solubility.pth"
             torch.save(net, path)
 
     target_names = train_dataloader.dataset.target_names
     return {  # if made deeper, tensorboardx writing breaks I think
-        'loss': {'train': train_loss, 'test': test_loss},
+        'loss': {'train': train_loss, 'test': test_loss, 'validation': validation_loss},
         'mean {}'.format(args.score):
             {'train': train_mean_score, 'validation': validation_mean_score, 'test': test_mean_score},
         'train {}s'.format(args.score): {target_names[i]: train_scores[i] for i in range(len(target_names))},
@@ -166,6 +169,7 @@ def less_log(net, train_dataloader, validation_dataloader, test_dataloader, crit
         args.score, scalars[mean_score_key]['validation'],
         args.score, scalars[mean_score_key]['test'])
     )
+    return scalars
 
 def more_log(net, train_dataloader, validation_dataloader, test_dataloader, criterion, epoch, args):
     mean_score_key = 'mean {}'.format(args.score)

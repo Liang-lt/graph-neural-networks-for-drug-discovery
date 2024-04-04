@@ -107,17 +107,17 @@ common_args_parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDe
 
 common_args_parser.add_argument('--cuda', action='store_true', default=False, help='Enables CUDA training')
 
-common_args_parser.add_argument('--train-set', type=str, default='toydata/piece-of-tox21-train.csv.gz', help='Training dataset path')
-common_args_parser.add_argument('--valid-set', type=str, default='toydata/piece-of-tox21-valid.csv.gz', help='Validation dataset path')
-common_args_parser.add_argument('--test-set', type=str, default='toydata/piece-of-tox21-test.csv.gz', help='Testing dataset path')
+common_args_parser.add_argument('--train-set', type=str, default='data/piece-of-tox21-train.csv.gz', help='Training dataset path')
+common_args_parser.add_argument('--valid-set', type=str, default='data/piece-of-tox21-valid.csv.gz', help='Validation dataset path')
+common_args_parser.add_argument('--test-set', type=str, default='data/piece-of-tox21-test.csv.gz', help='Testing dataset path')
 common_args_parser.add_argument('--loss', type=str, default='MaskedMultiTaskCrossEntropy', choices=[k for k, v in LOSS_FUNCTIONS.items()])
-common_args_parser.add_argument('--score', type=str, default='roc-auc', help='roc-auc or MSE')
+common_args_parser.add_argument('--score', type=str, default='RMSE', help='roc-auc or MSE')
 
 common_args_parser.add_argument('--epochs', type=int, default=500, help='Number of training epochs')
 common_args_parser.add_argument('--batch-size', type=int, default=50, help='Number of graphs in a mini-batch')
 common_args_parser.add_argument('--learn-rate', type=float, default=1e-5)
 
-common_args_parser.add_argument('--savemodel', action='store_true', default=False, help='Saves model with highest validation score')
+common_args_parser.add_argument('--savemodel', action='store_true', default=True, help='Saves model with highest validation score')
 common_args_parser.add_argument('--logging', type=str, default='less', choices=[k for k, v in LOG_FUNCTIONS.items()])
 
 
@@ -159,6 +159,7 @@ def main():
         net = net.cuda()
 
     optimizer = optim.Adam(net.parameters(), lr=args.learn_rate)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=20, verbose=True)
     criterion = LOSS_FUNCTIONS[args.loss]
 
     for epoch in range(args.epochs):
@@ -176,11 +177,15 @@ def main():
             torch.nn.utils.clip_grad_value_(net.parameters(), 5.0)
             optimizer.step()
 
+
         with torch.no_grad():
             net.eval()
-            LOG_FUNCTIONS[args.logging](
+            scalars = LOG_FUNCTIONS[args.logging](
                 net, train_dataloader, validation_dataloader, test_dataloader, criterion, epoch, args
             )
+        # print learning rate
+        print("learning rate: ", optimizer.param_groups[0]['lr'])
+        scheduler.step(scalars['loss']['validation'])
 
 
 if __name__ == '__main__':
