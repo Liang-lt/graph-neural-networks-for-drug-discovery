@@ -65,7 +65,7 @@ class MolGraphDataset(data.Dataset):
             self.header_cols = file.readline().decode('utf-8')[:-2].split(',')
         n_cols = len(self.header_cols)
         self.target_names = self.header_cols[1:]
-        self.smiles = np.genfromtxt(path, delimiter=',', skip_header=1, usecols=[0], dtype=np.str, comments=None)
+        self.smiles = np.genfromtxt(path, delimiter=',', skip_header=1, usecols=[0], dtype=str, comments=None)
         if prediction:
             self.targets = np.empty((len(self.smiles), n_cols - 2))  # may be used to figure out number of targets etc
         else:
@@ -126,7 +126,7 @@ class PyGGraphDataset(data.Dataset):
                     edge_attr.append(edges[i][j])
         edge_index = torch.tensor(edge_index, dtype=torch.long).t().contiguous()
         edge_attr = torch.tensor(edge_attr, dtype=torch.float)
-        return (adjacency, nodes, edge_index, edge_attr), targets
+        return (adjacency, nodes, edges, edge_index, edge_attr), targets
 
     def __len__(self):
         return len(self.smiles)
@@ -210,9 +210,11 @@ def molgraph_collate_fn(data):
 
     return adjacency_tensor, node_tensor, edge_tensor, target_tensor
 
+
+
 def pyggraph_collate_fn(data):
     n_samples = len(data)
-    (adjacency_0, node_features_0, edge_index_0, edge_features_0), targets_0 = data[0]
+    (adjacency_0, node_features_0, edges, edge_index_0, edge_features_0), targets_0 = data[0]
     n_nodes_largest_graph = max(map(lambda sample: sample[0][0].shape[0], data))
     n_node_features = node_features_0.shape[1]
     n_edge_features = edge_features_0.shape[1]
@@ -222,6 +224,8 @@ def pyggraph_collate_fn(data):
     node_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_node_features)
     edge_tensor = torch.zeros(n_samples, n_nodes_largest_graph, n_nodes_largest_graph, n_edge_features)
     target_tensor = torch.zeros(n_samples, n_targets)
+    edge_index_tensor = torch.zeros(n_samples, 2, edges.shape[0])
+    edge_attr_tensor = torch.zeros(n_samples, edges.shape[0], n_edge_features)
 
     for i in range(n_samples):
         (adjacency, node_features, edge_features), target = data[i]
@@ -230,7 +234,8 @@ def pyggraph_collate_fn(data):
         adjacency_tensor[i, :n_nodes, :n_nodes] = torch.Tensor(adjacency)
         node_tensor[i, :n_nodes, :] = torch.Tensor(node_features)
         edge_tensor[i, :n_nodes, :n_nodes, :] = torch.Tensor(edge_features)
-
         target_tensor[i] = torch.Tensor(target)
+        edge_index_tensor[i] = torch.Tensor(edge_index_0)
+        edge_attr_tensor[i] = torch.Tensor(edge_features_0)
 
-    return adjacency_tensor, node_tensor, edge_tensor, target_tensor
+    return adjacency_tensor, node_tensor, edge_tensor, edge_index_tensor, edge_attr_tensor, target_tensor
